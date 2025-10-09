@@ -60,6 +60,28 @@ fn main() {
                         .expect("Invalid numeric literal argument") as u8));
             }
         }
+        // If psuedo instruction
+        if opcode > 15 {
+            match opcode {
+                // INC
+                0x10 => {
+                    binary.push(
+                        // LDI rF 1
+                        (0xE << 12) | (0xF << 8) | (0x1)
+                    );
+                    // Extract register
+                    match args[0] {
+                        Argument::Register(reg) => binary.push(
+                            // ADD r1 rF r1
+                            (0x1 << 12) | ((reg as u16) << 8) | (0xF << 4) | (reg as u16)
+                        ),
+                        _ => panic!("Invalid arg for INC")
+                    }
+                },
+                _ => panic!("Invalid opcode"),
+            }
+            continue;
+        }
         let mut arg_bin: u16 = 0;
         let mut offset = 0;
         for i in args {
@@ -100,5 +122,5 @@ fn main() {
         binary_out[i] = first as u8;
         binary_out[i + 1] = second as u8;
     }
-    out.write(&mut binary_out);
+    out.write(&mut binary_out).expect("Failed to write file");
 }
