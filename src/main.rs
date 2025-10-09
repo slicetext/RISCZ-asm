@@ -1,0 +1,104 @@
+use std::ffi::OsString;
+use std::path::PathBuf;
+use std::{env, fs::File};
+use std::io::prelude::*;
+
+enum Argument {
+    Register(u8),
+    Literal(u8),
+    Address(u16),
+}
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+    let filename = &args[1];
+    let mut buf = String::new();
+    let mut file = File::open(filename).expect("Failed to open file");
+    file.read_to_string(&mut buf).expect("Failed to read file");
+    let lines: Vec<_> = buf.lines().collect();
+    let mut binary: Vec<u16> = Vec::new();
+    for l in lines {
+        let line = l.split(";").collect::<Vec<_>>()[0];
+        let line_components = line.split(" ").collect::<Vec<_>>();
+        let mnemonic = line_components[0];
+        let opcode = match mnemonic {
+            "NOP" => 0x0,
+            "ADD" => 0x1,
+            "SUB" => 0x2,
+            "DIV" => 0x3,
+            "AND" => 0x4,
+            "ORR" => 0x5,
+            "XOR" => 0x6,
+            "NOT" => 0x7,
+            "LSH" => 0x8,
+            "RSH" => 0x9,
+            "RET" => 0xA,
+            "BIR" => 0xB,
+            "LDM" => 0xC,
+            "STR" => 0xD,
+            "LDI" => 0xE,
+            "CMP" => 0xF,
+            ""    => continue,
+            // Psuedo Instructions
+            "INC" => 0x10,
+            _ => panic!("Invalid mnemonic {mnemonic}"),
+        };
+        let mut args: Vec<Argument> = Vec::new();
+        for i in 1..line_components.len() {
+            let cur = line_components[i];
+            // Check if register
+            if cur.contains("r") {
+                let reg_num = &cur[1..];
+                args.push(Argument::Register(u16::from_str_radix(reg_num, 16)
+                    .expect(&("Invalid register ".to_owned() + reg_num)) as u8));
+            } else if cur.contains("a") {
+                let addr_num = &cur[1..];
+                args.push(Argument::Address(addr_num.parse()
+                    .expect(&("Invalid address ".to_owned() + addr_num))));
+            } else {
+                args.push(Argument::Literal(cur.parse::<u8>()
+                        .expect("Invalid numeric literal argument") as u8));
+            }
+        }
+        let mut arg_bin: u16 = 0;
+        let mut offset = 0;
+        for i in args {
+            match i {
+                Argument::Literal(v) => {
+                    arg_bin |= (v as u16) << offset;
+                    offset += 8;
+                },
+                Argument::Address(v) => {
+                    arg_bin |= (v as u16) << offset;
+                    offset += 12;
+                },
+                Argument::Register(v) => {
+                    arg_bin |= (v as u16) << offset;
+                    offset += 4;
+                },
+            }
+        }
+        binary.push(
+            (opcode & 0x0F) << 12 | arg_bin
+        );
+    }
+    let mut out_name = PathBuf::from(filename)
+        .file_stem()
+        .unwrap().to_owned();
+    out_name.push(".riscz");
+
+    let mut out = File::create(out_name).expect("Failed to create output file");
+
+    let mut binary_out: [u8; 4096] = [0; 4096];
+    for i in 0..binary.len() * 2 {
+        if i % 2 != 0 {
+            continue;
+        }
+        let cur = binary[i / 2];
+        let first = cur & 0xFF00 >> 8;
+        let second = cur & 0xFF;
+        binary_out[i] = first as u8;
+        binary_out[i + 1] = second as u8;
+    }
+    out.write(&mut binary_out);
+}
