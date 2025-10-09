@@ -1,4 +1,3 @@
-use std::ffi::OsString;
 use std::path::PathBuf;
 use std::{env, fs::File};
 use std::io::prelude::*;
@@ -19,6 +18,11 @@ fn main() {
     let mut binary: Vec<u16> = Vec::new();
     for l in lines {
         let line = l.split(";").collect::<Vec<_>>()[0];
+        // Blank line
+        let line_whitespace: Vec<_> = line.split_whitespace().collect();
+        if line_whitespace.join("") == "" {
+            continue;
+        }
         let line_components = line.split(" ").collect::<Vec<_>>();
         let mnemonic = line_components[0];
         let opcode = match mnemonic {
