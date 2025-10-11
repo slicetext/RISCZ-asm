@@ -18,6 +18,6 @@ SUB r1 r1 rF
 CMP rF rF rE
 BIR 3
 ADD r2 r2 r3
-ADD r1 rF ; Increment r1 for parent calls
+ADD r1 r1 rF ; Increment r1 for parent calls
 
 NOP ; Program done

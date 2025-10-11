@@ -117,12 +117,15 @@ fn main() {
     let mut out = File::create(filename_out).expect("Failed to create output file");
 
     let mut binary_out: [u8; 4096] = [0; 4096];
-    for i in (0..binary.len()).step_by(2) {
+    let mut index = 0;
+    for i in 0..binary.len() {
         let cur = binary[i];
+        println!("{:#x}", cur);
         let first = (cur & 0xFF00) >> 8;
         let second = cur & 0x00FF;
-        binary_out[i] = first as u8;
-        binary_out[i + 1] = second as u8;
+        binary_out[index] = first as u8;
+        binary_out[index + 1] = second as u8;
+        index += 2;
     }
     out.write(&mut binary_out).expect("Failed to write file");
 }
