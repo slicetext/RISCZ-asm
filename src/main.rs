@@ -11,6 +11,7 @@ enum Argument {
 fn main() {
     let args: Vec<String> = env::args().collect();
     let filename = &args[1];
+    let filename_out = &args[2];
     let mut buf = String::new();
     let mut file = File::open(filename).expect("Failed to open file");
     file.read_to_string(&mut buf).expect("Failed to read file");
@@ -50,6 +51,10 @@ fn main() {
         let mut args: Vec<Argument> = Vec::new();
         for i in 1..line_components.len() {
             let cur = line_components[i];
+            // Skip blanks
+            if cur == "" {
+                continue;
+            }
             // Check if register
             if cur.contains("r") {
                 let reg_num = &cur[1..];
@@ -87,20 +92,20 @@ fn main() {
             continue;
         }
         let mut arg_bin: u16 = 0;
-        let mut offset = 0;
+        let mut offset = 12;
         for i in args {
             match i {
                 Argument::Literal(v) => {
+                    offset -= 8;
                     arg_bin |= (v as u16) << offset;
-                    offset += 8;
                 },
                 Argument::Address(v) => {
+                    offset -= 12;
                     arg_bin |= (v as u16) << offset;
-                    offset += 12;
                 },
                 Argument::Register(v) => {
+                    offset -= 4;
                     arg_bin |= (v as u16) << offset;
-                    offset += 4;
                 },
             }
         }
@@ -108,21 +113,14 @@ fn main() {
             (opcode & 0x0F) << 12 | arg_bin
         );
     }
-    let mut out_name = PathBuf::from(filename)
-        .file_stem()
-        .unwrap().to_owned();
-    out_name.push(".riscz");
 
-    let mut out = File::create(out_name).expect("Failed to create output file");
+    let mut out = File::create(filename_out).expect("Failed to create output file");
 
     let mut binary_out: [u8; 4096] = [0; 4096];
-    for i in 0..binary.len() * 2 {
-        if i % 2 != 0 {
-            continue;
-        }
-        let cur = binary[i / 2];
-        let first = cur & 0xFF00 >> 8;
-        let second = cur & 0xFF;
+    for i in (0..binary.len()).step_by(2) {
+        let cur = binary[i];
+        let first = (cur & 0xFF00) >> 8;
+        let second = cur & 0x00FF;
         binary_out[i] = first as u8;
         binary_out[i + 1] = second as u8;
     }
