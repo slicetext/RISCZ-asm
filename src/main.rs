@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use std::{env, fs::File};
 use std::io::prelude::*;
 
@@ -27,25 +26,26 @@ fn main() {
         let line_components = line.split(" ").collect::<Vec<_>>();
         let mnemonic = line_components[0];
         let opcode = match mnemonic {
-            "NOP" => 0x0,
-            "ADD" => 0x1,
-            "SUB" => 0x2,
-            "DIV" => 0x3,
-            "AND" => 0x4,
-            "ORR" => 0x5,
-            "XOR" => 0x6,
-            "NOT" => 0x7,
-            "LSH" => 0x8,
-            "RSH" => 0x9,
-            "RET" => 0xA,
-            "BIR" => 0xB,
-            "LDM" => 0xC,
-            "STR" => 0xD,
-            "LDI" => 0xE,
-            "CMP" => 0xF,
+            "ADD" => 0x0,
+            "SUB" => 0x1,
+            "DIV" => 0x2,
+            "AND" => 0x3,
+            "ORR" => 0x4,
+            "XOR" => 0x5,
+            "NOT" => 0x6,
+            "LSH" => 0x7,
+            "RSH" => 0x8,
+            "RET" => 0x9,
+            "BIR" => 0xA,
+            "LDM" => 0xB,
+            "STR" => 0xC,
+            "LDI" => 0xD,
+            "CMP" => 0xE,
+            "SPG" => 0xF,
             ""    => continue,
             // Psuedo Instructions
-            "INC" => 0x10,
+            "NOP" => 0x10,
+            "INC" => 0x11,
             _ => panic!("Invalid mnemonic {mnemonic}"),
         };
         let mut args: Vec<Argument> = Vec::new();
@@ -72,8 +72,14 @@ fn main() {
         // If psuedo instruction
         if opcode > 15 {
             match opcode {
-                // INC
+                // NOP
                 0x10 => {
+                    binary.push(
+                        0x0000
+                    );
+                }
+                // INC
+                0x11 => {
                     binary.push(
                         // LDI rF 1
                         (0xE << 12) | (0xF << 8) | (0x1)
