@@ -7,6 +7,7 @@ LDI r5 0 ; pixel
 LDI r6 2 ; pixel increment
 LDI rF 16
 DIV rF r5 rF ; Find row number
+AND rF rF r3
 ADD r5 rF r5 ; for checkerboard
 STR r5 r4 ; draw pixel
 SUB r5 r5 rF ; remove checkerboard offset
