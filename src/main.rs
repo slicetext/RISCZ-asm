@@ -21,6 +21,7 @@ fn main() {
         // Blank line
         let line_whitespace: Vec<_> = line.split_whitespace().collect();
         if line_whitespace.join("") == "" {
+            binary.push(0);
             continue;
         }
         let line_components = line.split(" ").collect::<Vec<_>>();
@@ -62,6 +63,7 @@ fn main() {
                     .expect(&("Invalid register ".to_owned() + reg_num)) as u8));
             } else if cur.contains("a") {
                 let addr_num = &cur[1..];
+                println!("Addr {addr_num}");
                 args.push(Argument::Address(addr_num.parse()
                     .expect(&("Invalid address ".to_owned() + addr_num))));
             } else {
